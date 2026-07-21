@@ -23,6 +23,7 @@ import time
 from patchright.sync_api import sync_playwright
 
 from config import (
+    CONDITION_FILTER,
     MAX_LISTINGS_PAGES_PER_BRAND,
     SIZE_RANGE_EU,
     VINTED_BASE_URL,
@@ -75,6 +76,10 @@ def _extract_cards(page):
         if size is None or not (SIZE_RANGE_EU[0] <= size <= SIZE_RANGE_EU[1]):
             continue
 
+        condition = match.group("condition").strip()
+        if condition.lower() != CONDITION_FILTER:
+            continue
+
         fav_aria = fav_btn.get_attribute("aria-label") if fav_btn else ""
         fav_match = FAVORITES_PATTERN.search(fav_aria or "")
         favorites = int(fav_match.group(1)) if fav_match else 0
@@ -117,9 +122,9 @@ def _goto_with_retries(page, url):
 def fetch_listings_for_brand(brand, max_pages=MAX_LISTINGS_PAGES_PER_BRAND):
     """
     Devuelve anuncios de Vinted.es en Mujer > Zapatillas de deporte, filtrados
-    por marca (vía search_text, verificado contra el sitio real) y por talla
-    38-41 (filtrado en cliente, ya que Vinted no expone talla como parámetro
-    fiable en la URL pública).
+    por marca (vía search_text, verificado contra el sitio real), talla 38-41
+    y estado "Nuevo con etiquetas" (ambos filtrados en cliente, ya que Vinted
+    no expone estos filtros de forma fiable en la URL pública).
 
     Nota MVP: solo se lee la primera página de resultados (~100 anuncios) por
     marca. Vinted pagina por scroll infinito dentro de una SPA; automatizar el
