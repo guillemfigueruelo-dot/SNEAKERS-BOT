@@ -36,7 +36,10 @@ def run():
         all_listings.extend(listings)
 
     groups = group_by_model(all_listings)
-    print(f"Modelos detectados: {len(groups)}")
+    grouped_count = sum(len(g["listings"]) for g in groups.values())
+    print(f"Modelos detectados: {len(groups)} ({grouped_count}/{len(all_listings)} anuncios agrupados)")
+    if grouped_count < len(all_listings):
+        print(f"  {len(all_listings) - grouped_count} anuncio(s) descartado(s): marca/modelo no reconocido en MODEL_KEYWORDS")
 
     for model_name, group in groups.items():
         trend_growth = get_trend_growth_pct(group["trend_query"])
