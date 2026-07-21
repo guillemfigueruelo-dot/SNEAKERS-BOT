@@ -1,0 +1,4 @@
+patchright>=1.44
+pytrends>=4.9
+python-dotenv>=1.0
+requests>=2.31
