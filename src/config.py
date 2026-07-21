@@ -10,6 +10,11 @@ BRANDS = ["nike", "adidas"]
 
 SIZE_RANGE_EU = (38.0, 41.0)  # inclusive
 
+# Solo interesan anuncios nuevos con etiquetas (más comparables a precio de
+# mercado que un usado, y más fáciles de revender). Se filtra en cliente
+# sobre el campo "estado" ya extraído del anuncio.
+CONDITION_FILTER = "nuevo con etiquetas"
+
 # Vinted no expone el "modelo" como campo estructurado, así que lo inferimos
 # buscando estas familias conocidas dentro del título del anuncio. Ampliar
 # esta lista es la forma de "enseñarle" al bot nuevos modelos a vigilar.
