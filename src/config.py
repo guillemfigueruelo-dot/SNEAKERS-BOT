@@ -2,10 +2,6 @@ import os
 
 VINTED_BASE_URL = "https://www.vinted.es"
 
-# Mujer > Calzado > Zapatillas de deporte (confirmado navegando el sitio real)
-WOMEN_SPORT_SHOES_CATALOG_ID = 2630
-WOMEN_SPORT_SHOES_SLUG = "women_sport_shoes"
-
 SIZE_RANGE_EU = (38.0, 41.0)  # inclusive
 
 # Solo interesan anuncios nuevos con etiquetas (más comparables a precio de

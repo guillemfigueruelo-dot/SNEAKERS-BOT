@@ -15,7 +15,7 @@ def format_alert(model_name, search_url, evaluation):
     cheapest = evaluation["cheapest_listing"]
     lines = [
         f"\U0001F525 <b>{model_name}</b> — alta demanda / baja oferta",
-        f"Anuncios activos (mujer, talla 38-41, últimos 7 días): {evaluation['n_listings']}",
+        f"Anuncios activos (talla 38-41, últimos 7 días): {evaluation['n_listings']}",
         f"Favoritos promedio: {evaluation['avg_favorites']}",
     ]
     if evaluation["avg_price_eur"] is not None:
@@ -38,7 +38,7 @@ def run():
         print(f"Buscando '{model_name}' en Vinted.es...")
 
         listings, search_url = fetch_listings_for_model(brand, model)
-        print(f"  {len(listings)} anuncios (mujer, talla 38-41, <7 días) tras filtrar")
+        print(f"  {len(listings)} anuncios (talla 38-41, <7 días) tras filtrar")
 
         trend_growth = get_trend_growth_pct(model_name)
         evaluation = evaluate_opportunity(model_name, listings, trend_growth)

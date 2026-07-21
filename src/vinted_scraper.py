@@ -29,8 +29,6 @@ from config import (
     MAX_LISTINGS_PAGES_PER_MODEL,
     SIZE_RANGE_EU,
     VINTED_BASE_URL,
-    WOMEN_SPORT_SHOES_CATALOG_ID,
-    WOMEN_SPORT_SHOES_SLUG,
 )
 
 # El alt del <img> de cada tarjeta trae toda la info estructurada, p.ej.:
@@ -143,18 +141,17 @@ def _goto_with_retries(page, url):
 
 def build_search_url(brand, model):
     query = quote_plus(f"{brand} {model}")
-    return (
-        f"{VINTED_BASE_URL}/catalog/{WOMEN_SPORT_SHOES_CATALOG_ID}-{WOMEN_SPORT_SHOES_SLUG}"
-        f"?search_text={query}&order=newest_first"
-    )
+    return f"{VINTED_BASE_URL}/catalog?search_text={query}&order=newest_first"
 
 
 def fetch_listings_for_model(brand, model, max_pages=MAX_LISTINGS_PAGES_PER_MODEL):
     """
-    Busca "{brand} {model}" literal en Vinted.es, dentro de Mujer > Zapatillas
-    de deporte. Filtra en cliente por talla 38-41, estado "Nuevo con
-    etiquetas" y antigüedad <= MAX_LISTING_AGE_DAYS (Vinted no expone estos
-    filtros de forma fiable en la URL pública).
+    Busca "{brand} {model}" literal en Vinted.es, sin restringir a ninguna
+    categoría (antes se limitaba a Mujer > Zapatillas de deporte, pero eso
+    descartaba anuncios mal categorizados en Vinted). Los únicos filtros
+    aplicados son talla 38-41, estado "Nuevo con etiquetas" y antigüedad <=
+    MAX_LISTING_AGE_DAYS -- todos en cliente, ya que Vinted no los expone de
+    forma fiable en la URL pública.
 
     Devuelve (listings, search_url) -- search_url es el enlace de búsqueda
     real (no de un anuncio concreto), pensado para que el usuario lo abra y
