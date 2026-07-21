@@ -32,26 +32,6 @@ MODEL_KEYWORDS = {
     ],
 }
 
-# Vinted es paneuropeo: en vinted.es aparecen anuncios escritos en español,
-# italiano, francés... El color es lo que distingue un colorway concreto
-# (buscable literalmente en Vinted) de la familia genérica del modelo, así
-# que se detecta igual que el modelo: por keyword, multi-idioma.
-COLOR_KEYWORDS = {
-    "blanco": ["blanco", "blanca", "white", "blanc", "blanche", "bianco", "bianca", "branco"],
-    "negro": ["negro", "negra", "black", "noir", "noire", "nero", "nera", "preto"],
-    "gris": ["gris", "grey", "gray", "grigio", "grigia", "cinza"],
-    "verde": ["verde", "green", "vert", "verte"],
-    "rojo": ["rojo", "roja", "red", "rouge", "rosso", "rossa", "vermelho"],
-    "azul": ["azul", "blue", "bleu", "bleue", "blu", "azzurro", "azzurra"],
-    "rosa": ["rosa", "pink", "rose"],
-    "amarillo": ["amarillo", "amarilla", "yellow", "jaune", "giallo", "gialla", "amarelo"],
-    "morado": ["morado", "lila", "purple", "violet", "viola", "lilac", "malva"],
-    "marron": ["marrón", "marron", "brown", "marrone", "castanho"],
-    "beige": ["beige", "crema", "cream"],
-    "naranja": ["naranja", "orange", "arancione"],
-    "multicolor": ["multicolor", "multicolour", "multicolore"],
-}
-
 MAX_LISTINGS_PAGES_PER_BRAND = 1  # MVP: 1 página (~100 anuncios) por marca, ver notas en vinted_scraper.py
 
 # "oferta baja": pocos anuncios activos del modelo detectado en el rango de tallas
