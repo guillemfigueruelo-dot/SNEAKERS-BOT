@@ -38,9 +38,9 @@ def run():
     groups = group_by_model(all_listings)
     print(f"Modelos detectados: {len(groups)}")
 
-    for model_name, listings in groups.items():
-        trend_growth = get_trend_growth_pct(model_name)
-        evaluation = evaluate_opportunity(model_name, listings, trend_growth)
+    for model_name, group in groups.items():
+        trend_growth = get_trend_growth_pct(group["trend_query"])
+        evaluation = evaluate_opportunity(model_name, group["listings"], trend_growth)
 
         print(
             f"- {model_name}: {evaluation['n_listings']} anuncios, "
