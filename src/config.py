@@ -6,8 +6,6 @@ VINTED_BASE_URL = "https://www.vinted.es"
 WOMEN_SPORT_SHOES_CATALOG_ID = 2630
 WOMEN_SPORT_SHOES_SLUG = "women_sport_shoes"
 
-BRANDS = ["nike", "adidas"]
-
 SIZE_RANGE_EU = (38.0, 41.0)  # inclusive
 
 # Solo interesan anuncios nuevos con etiquetas (más comparables a precio de
@@ -15,26 +13,22 @@ SIZE_RANGE_EU = (38.0, 41.0)  # inclusive
 # sobre el campo "estado" ya extraído del anuncio.
 CONDITION_FILTER = "nuevo con etiquetas"
 
-# Vinted no expone el "modelo" como campo estructurado, así que lo inferimos
-# buscando estas familias conocidas dentro del título del anuncio. Ampliar
-# esta lista es la forma de "enseñarle" al bot nuevos modelos a vigilar.
-MODEL_KEYWORDS = {
-    "nike": [
-        "air force 1", "air force", "af1",
-        "air max 1", "air max 90", "air max 95", "air max 97", "air max plus", "air max",
-        "dunk low", "dunk high", "dunk",
-        "pegasus", "vomero", "invincible",
-        "cortez", "blazer", "waffle", "p-6000", "v2k",
-    ],
-    "adidas": [
-        "samba", "gazelle", "campus 00", "campus", "spezial", "handball spezial",
-        "superstar", "stan smith", "sl 72", "forum", "ozweego", "nmd",
-    ],
-}
+# Vinted no expone una fecha de publicación en el listado de búsqueda. Como
+# proxy se usa el timestamp que trae la URL de la imagen de cada anuncio
+# (verificado en vivo: con order=newest_first los timestamps salen en orden
+# decreciente y el más reciente coincide con la hora actual real). Es una
+# heurística, no un dato exacto -- si Vinted cambia el formato de sus URLs
+# de imagen, este filtro deja de aplicarse (ver vinted_scraper.py).
+MAX_LISTING_AGE_DAYS = 7
 
-MAX_LISTINGS_PAGES_PER_BRAND = 1  # MVP: 1 página (~100 anuncios) por marca, ver notas en vinted_scraper.py
+# Ruta al CSV con los modelos exactos a trackear (columnas: brand,model).
+# Cada fila = una búsqueda literal "{brand} {model}" en Vinted. Sustituye a
+# la antigua detección automática de modelo por palabras clave.
+TRACKED_MODELS_CSV = os.getenv("TRACKED_MODELS_CSV", "tracked_models.csv")
 
-# "oferta baja": pocos anuncios activos del modelo detectado en el rango de tallas
+MAX_LISTINGS_PAGES_PER_MODEL = 1  # MVP: 1 página por modelo, ver notas en vinted_scraper.py
+
+# "oferta baja": pocos anuncios activos del modelo en el rango de tallas
 LOW_SUPPLY_MAX_LISTINGS = 3
 # "demanda alta": crecimiento de interés en Google Trends por encima de este % (3 meses)
 HIGH_DEMAND_TREND_GROWTH_PCT = 20

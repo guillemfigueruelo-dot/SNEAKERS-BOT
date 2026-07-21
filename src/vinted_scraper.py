@@ -19,12 +19,14 @@ uso se ha marcado como sospechoso y conviene bajar la frecuencia.
 
 import re
 import time
+from urllib.parse import quote_plus
 
 from patchright.sync_api import sync_playwright
 
 from config import (
     CONDITION_FILTER,
-    MAX_LISTINGS_PAGES_PER_BRAND,
+    MAX_LISTING_AGE_DAYS,
+    MAX_LISTINGS_PAGES_PER_MODEL,
     SIZE_RANGE_EU,
     VINTED_BASE_URL,
     WOMEN_SPORT_SHOES_CATALOG_ID,
@@ -39,6 +41,13 @@ ALT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 FAVORITES_PATTERN = re.compile(r"favorito de (\d+) usuario", re.IGNORECASE)
+
+# Vinted no da una fecha de publicación en el listado, pero la URL de la
+# imagen trae un timestamp que, combinado con order=newest_first, se
+# comporta de forma consistente como proxy de antigüedad (verificado en
+# vivo). Es una heurística: si cambia el formato de imagen de Vinted, esto
+# deja de funcionar silenciosamente (age_days da None y no se filtra).
+IMAGE_TIMESTAMP_RE = re.compile(r"/(\d{9,12})\.webp")
 
 
 def _parse_size(raw):
@@ -55,6 +64,14 @@ def _parse_price(raw):
         return float(raw)
     except ValueError:
         return None
+
+
+def _parse_listing_age_days(img_src):
+    match = IMAGE_TIMESTAMP_RE.search(img_src or "")
+    if not match:
+        return None
+    photo_epoch = int(match.group(1))
+    return (time.time() - photo_epoch) / 86400
 
 
 def _extract_cards(page):
@@ -80,6 +97,10 @@ def _extract_cards(page):
         if condition.lower() != CONDITION_FILTER:
             continue
 
+        age_days = _parse_listing_age_days(img.get_attribute("src"))
+        if age_days is not None and age_days > MAX_LISTING_AGE_DAYS:
+            continue
+
         fav_aria = fav_btn.get_attribute("aria-label") if fav_btn else ""
         fav_match = FAVORITES_PATTERN.search(fav_aria or "")
         favorites = int(fav_match.group(1)) if fav_match else 0
@@ -88,11 +109,12 @@ def _extract_cards(page):
             {
                 "title": match.group("title").strip(),
                 "brand": match.group("brand").strip(),
-                "condition": match.group("condition").strip(),
+                "condition": condition,
                 "size_eu": size,
                 "price_eur": _parse_price(match.group("price")),
                 "favorites": favorites,
                 "url": link.get_attribute("href"),
+                "age_days": round(age_days, 1) if age_days is not None else None,
             }
         )
     return listings
@@ -119,29 +141,37 @@ def _goto_with_retries(page, url):
     return False
 
 
-def fetch_listings_for_brand(brand, max_pages=MAX_LISTINGS_PAGES_PER_BRAND):
-    """
-    Devuelve anuncios de Vinted.es en Mujer > Zapatillas de deporte, filtrados
-    por marca (vía search_text, verificado contra el sitio real), talla 38-41
-    y estado "Nuevo con etiquetas" (ambos filtrados en cliente, ya que Vinted
-    no expone estos filtros de forma fiable en la URL pública).
+def build_search_url(brand, model):
+    query = quote_plus(f"{brand} {model}")
+    return (
+        f"{VINTED_BASE_URL}/catalog/{WOMEN_SPORT_SHOES_CATALOG_ID}-{WOMEN_SPORT_SHOES_SLUG}"
+        f"?search_text={query}&order=newest_first"
+    )
 
-    Nota MVP: solo se lee la primera página de resultados (~100 anuncios) por
-    marca. Vinted pagina por scroll infinito dentro de una SPA; automatizar el
-    scroll es una mejora de Fase 2, no bloqueante para validar la idea.
+
+def fetch_listings_for_model(brand, model, max_pages=MAX_LISTINGS_PAGES_PER_MODEL):
     """
+    Busca "{brand} {model}" literal en Vinted.es, dentro de Mujer > Zapatillas
+    de deporte. Filtra en cliente por talla 38-41, estado "Nuevo con
+    etiquetas" y antigüedad <= MAX_LISTING_AGE_DAYS (Vinted no expone estos
+    filtros de forma fiable en la URL pública).
+
+    Devuelve (listings, search_url) -- search_url es el enlace de búsqueda
+    real (no de un anuncio concreto), pensado para que el usuario lo abra y
+    verifique la señal él mismo.
+
+    Nota MVP: solo se lee la primera página de resultados por búsqueda.
+    """
+    search_url = build_search_url(brand, model)
     all_listings = []
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         for page_num in range(1, max_pages + 1):
-            url = (
-                f"{VINTED_BASE_URL}/catalog/{WOMEN_SPORT_SHOES_CATALOG_ID}-{WOMEN_SPORT_SHOES_SLUG}"
-                f"?search_text={brand}&page={page_num}"
-            )
+            url = f"{search_url}&page={page_num}"
             if not _goto_with_retries(page, url):
-                print(f"  No se pudo superar el reto de Cloudflare para '{brand}' pág. {page_num}, se omite.")
+                print(f"  No se pudo superar el reto de Cloudflare para '{brand} {model}' pág. {page_num}, se omite.")
                 break
 
             try:
@@ -161,4 +191,4 @@ def fetch_listings_for_brand(brand, max_pages=MAX_LISTINGS_PAGES_PER_BRAND):
 
         browser.close()
 
-    return all_listings
+    return all_listings, search_url
