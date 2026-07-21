@@ -23,7 +23,7 @@ producía falsos negativos.
 
 import re
 
-from config import MODEL_KEYWORDS
+from config import BRANDS, MODEL_KEYWORDS
 
 # Palabras sin valor como "colorway" que sobran tras quitar marca+modelo
 # (tallas, género, tipo de calzado, nexos...). Multi-idioma porque Vinted.es
@@ -40,8 +40,25 @@ FILLER_WORDS = {
 SIZE_TOKEN_RE = re.compile(r"^\d{1,2}([.,]\d+)?$")
 
 
+def match_brand_key(brand):
+    """
+    El campo "marca" que da Vinted a veces incluye el propio modelo (p.ej.
+    "adidas Stan Smith" en vez de solo "adidas"), así que se busca qué marca
+    conocida aparece dentro del texto en vez de exigir una coincidencia
+    exacta -- si no, esos anuncios se descartaban en silencio.
+    """
+    brand_lower = brand.lower().strip()
+    for known_brand in BRANDS:
+        if known_brand in brand_lower:
+            return known_brand
+    return None
+
+
 def detect_model(brand, title):
-    brand_key = brand.lower().strip()
+    brand_key = match_brand_key(brand)
+    if brand_key is None:
+        return None
+
     keywords = MODEL_KEYWORDS.get(brand_key, [])
     title_lower = title.lower()
 
@@ -92,10 +109,13 @@ def group_by_model(listings):
         if model_keyword is None:
             continue
 
-        brand_title = listing["brand"].title()
-        base_name = f"{brand_title} {model_keyword.title()}"
+        # Se usa la marca "canónica" (nike/adidas), no el campo bruto de
+        # Vinted, que a veces ya trae el modelo pegado (ver match_brand_key)
+        # y duplicaría texto en el nombre mostrado.
+        brand_key = match_brand_key(listing["brand"])
+        base_name = f"{brand_key.title()} {model_keyword.title()}"
 
-        colorway = extract_colorway(listing["brand"], model_keyword, listing["title"])
+        colorway = extract_colorway(brand_key, model_keyword, listing["title"])
         display_name = f"{base_name} {colorway}" if colorway else base_name
 
         group = groups.setdefault(display_name, {"listings": [], "trend_query": base_name})
